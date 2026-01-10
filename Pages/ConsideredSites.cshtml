@@ -58,11 +58,13 @@
                     <table class="table table-sm table-striped align-middle" id="siteDocumentsTable">
                         <thead class="table-primary">
                             <tr>
-                                <th style="width: 4rem;">File</th>
+                                <th style="width: 4rem;">Name</th>
                                 <th>Document Title</th>
                                 <th style="width: 12rem;">Document Category</th>
+                                <th style="width: 10rem;">Site Type</th>
+                                <th style="width: 12rem;">LMCS Names</th>
                                 <th style="width: 8rem;">State</th>
-                                <th style="width: 10rem;">Date Posted</th>
+                                <th style="width: 10rem;">Date Created</th>
                             </tr>
                         </thead>
                         <tbody id="siteDocumentsBody"></tbody>
@@ -146,7 +148,7 @@
                     // Show "There are no items to display here" message
                     const row = document.createElement('tr');
                     const cell = document.createElement('td');
-                    cell.colSpan = 5;
+                    cell.colSpan = 7;
                     cell.className = 'text-center text-muted py-4';
                     cell.textContent = 'There are no items to display here.';
                     row.appendChild(cell);
@@ -159,24 +161,39 @@
                 docs.forEach(doc => {
                     const row = document.createElement('tr');
 
-                    const fileCell = document.createElement('td');
-                    fileCell.textContent = '📄';
-                    row.appendChild(fileCell);
+                    // Name column
+                    const nameCell = document.createElement('td');
+                    nameCell.textContent = doc.name || '📄';
+                    row.appendChild(nameCell);
 
+                    // Document Title
                     const titleCell = document.createElement('td');
                     titleCell.textContent = doc.title || '';
                     row.appendChild(titleCell);
 
+                    // Document Category
                     const catCell = document.createElement('td');
                     catCell.textContent = doc.category || '';
                     row.appendChild(catCell);
 
+                    // Site Type
+                    const siteTypeCell = document.createElement('td');
+                    siteTypeCell.textContent = doc.siteType || '';
+                    row.appendChild(siteTypeCell);
+
+                    // LMCS Names
+                    const lmcsNamesCell = document.createElement('td');
+                    lmcsNamesCell.textContent = doc.lmcsNames || '';
+                    row.appendChild(lmcsNamesCell);
+
+                    // State
                     const stateCell = document.createElement('td');
                     stateCell.textContent = doc.state || '';
                     row.appendChild(stateCell);
 
+                    // Date Created
                     const dateCell = document.createElement('td');
-                    dateCell.textContent = doc.datePosted || '';
+                    dateCell.textContent = doc.dateCreated || '';
                     row.appendChild(dateCell);
 
                     siteDocumentsBody.appendChild(row);

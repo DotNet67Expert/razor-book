@@ -468,12 +468,14 @@ public class LocationService : ILocationService
             bool hasFileLeafRef = availableColumns.Contains("FileLeafRef");
             bool hasDocumentCategory = availableColumns.Contains("Document_x0020_Category");
             bool hasState = availableColumns.Contains("State");
+            bool hasSiteType = availableColumns.Contains("Site_x0020_Type");
+            bool hasLMCSNames = availableColumns.Contains("LMCS_x0020_Names");
             bool hasLegacyDateCreated = availableColumns.Contains("LegacyDateCreated");
             bool hasDateCreated = availableColumns.Contains("Date_x0020_Created");
             bool hasDatePosted = availableColumns.Contains("Date_x0020_Posted");
             
-            _logger.LogInformation("Columns check for documents - Title:{T} DocDesc:{D} FileLeafRef:{F} Category:{C} State:{S} LegacyDate:{LDate} DateCreated:{DC} DatePosted:{DP}", 
-                hasTitle, hasDocDesc, hasFileLeafRef, hasDocumentCategory, hasState, hasLegacyDateCreated, hasDateCreated, hasDatePosted);
+            _logger.LogInformation("Columns check for documents - Title:{T} DocDesc:{D} FileLeafRef:{F} Category:{C} State:{S} SiteType:{ST} LMCSNames:{LMCS} LegacyDate:{LDate} DateCreated:{DC} DatePosted:{DP}", 
+                hasTitle, hasDocDesc, hasFileLeafRef, hasDocumentCategory, hasState, hasSiteType, hasLMCSNames, hasLegacyDateCreated, hasDateCreated, hasDatePosted);
 
             // Build title column
             var titleParts = new List<string>();
@@ -502,26 +504,33 @@ public class LocationService : ILocationService
             string categoryColumn = hasDocumentCategory 
                 ? "COALESCE([Document_x0020_Category], '') AS DocumentCategory" 
                 : "CAST(NULL AS NVARCHAR(MAX)) AS DocumentCategory";
+            string siteTypeColumn = hasSiteType
+                ? "COALESCE([Site_x0020_Type], '') AS SiteType"
+                : "CAST(NULL AS NVARCHAR(MAX)) AS SiteType";
+            string lmcsNamesColumn = hasLMCSNames
+                ? "COALESCE([LMCS_x0020_Names], '') AS LMCSNames"
+                : "CAST(NULL AS NVARCHAR(MAX)) AS LMCSNames";
             string stateColumn = hasState 
                 ? "COALESCE([State], '') AS State" 
                 : "CAST(NULL AS NVARCHAR(MAX)) AS State";
+            
             // Use the first available date column
             string dateColumn;
-            if (hasLegacyDateCreated)
+            if (hasDateCreated)
             {
-                dateColumn = "CASE WHEN [LegacyDateCreated] IS NOT NULL THEN CONVERT(VARCHAR(50), [LegacyDateCreated], 101) ELSE '' END AS DatePosted";
+                dateColumn = "CASE WHEN [Date_x0020_Created] IS NOT NULL THEN CONVERT(VARCHAR(50), [Date_x0020_Created], 101) ELSE '' END AS DateCreated";
             }
-            else if (hasDateCreated)
+            else if (hasLegacyDateCreated)
             {
-                dateColumn = "CASE WHEN [Date_x0020_Created] IS NOT NULL THEN CONVERT(VARCHAR(50), [Date_x0020_Created], 101) ELSE '' END AS DatePosted";
+                dateColumn = "CASE WHEN [LegacyDateCreated] IS NOT NULL THEN CONVERT(VARCHAR(50), [LegacyDateCreated], 101) ELSE '' END AS DateCreated";
             }
             else if (hasDatePosted)
             {
-                dateColumn = "CASE WHEN [Date_x0020_Posted] IS NOT NULL THEN CONVERT(VARCHAR(50), [Date_x0020_Posted], 101) ELSE '' END AS DatePosted";
+                dateColumn = "CASE WHEN [Date_x0020_Posted] IS NOT NULL THEN CONVERT(VARCHAR(50), [Date_x0020_Posted], 101) ELSE '' END AS DateCreated";
             }
             else
             {
-                dateColumn = "CAST(NULL AS NVARCHAR(MAX)) AS DatePosted";
+                dateColumn = "CAST(NULL AS NVARCHAR(MAX)) AS DateCreated";
             }
             string fileRefColumn = hasFileLeafRef 
                 ? "[FileLeafRef] AS FileLeafRef" 
@@ -541,13 +550,13 @@ public class LocationService : ILocationService
 
             // Build ORDER BY - use first available date column
             string orderByClause = "";
-            if (hasLegacyDateCreated)
-            {
-                orderByClause = " ORDER BY [LegacyDateCreated] DESC";
-            }
-            else if (hasDateCreated)
+            if (hasDateCreated)
             {
                 orderByClause = " ORDER BY [Date_x0020_Created] DESC";
+            }
+            else if (hasLegacyDateCreated)
+            {
+                orderByClause = " ORDER BY [LegacyDateCreated] DESC";
             }
             else if (hasDatePosted)
             {
@@ -565,6 +574,8 @@ public class LocationService : ILocationService
             queryBuilder.AppendLine("SELECT");
             queryBuilder.AppendLine($"  {titleColumn},");
             queryBuilder.AppendLine($"  {categoryColumn},");
+            queryBuilder.AppendLine($"  {siteTypeColumn},");
+            queryBuilder.AppendLine($"  {lmcsNamesColumn},");
             queryBuilder.AppendLine($"  {stateColumn},");
             queryBuilder.AppendLine($"  {dateColumn},");
             queryBuilder.AppendLine($"  {fileRefColumn}");
@@ -597,19 +608,27 @@ public class LocationService : ILocationService
                 var filePath = hasFileLeafRef ? SafeGetString(reader, "FileLeafRef").Trim() : string.Empty;
                 var category = SafeGetString(reader, "DocumentCategory").Trim();
                 var state = SafeGetString(reader, "State").Trim();
-                var datePosted = SafeGetString(reader, "DatePosted").Trim();
+                var siteType = SafeGetString(reader, "SiteType").Trim();
+                var lmcsNames = SafeGetString(reader, "LMCSNames").Trim();
+                var dateCreated = SafeGetString(reader, "DateCreated").Trim();
+
+                // Use FileLeafRef as Name if available, otherwise use file icon
+                var name = hasFileLeafRef && !string.IsNullOrWhiteSpace(filePath) ? filePath : "📄";
 
                 documents.Add(new DocumentItem
                 {
+                    Name = name,
                     Title = title,
                     Category = category,
+                    SiteType = siteType,
+                    LMCSNames = lmcsNames,
                     State = state,
-                    DatePosted = datePosted,
+                    DateCreated = dateCreated,
                     FilePath = filePath
                 });
                 
-                _logger.LogDebug("Added document: Title={Title}, Category={Category}, State={State}, Date={Date}", 
-                    title, category, state, datePosted);
+                _logger.LogDebug("Added document: Title={Title}, Category={Category}, SiteType={SiteType}, LMCSNames={LMCSNames}, State={State}, Date={Date}", 
+                    title, category, siteType, lmcsNames, state, dateCreated);
             }
             
             _logger.LogInformation("Loaded {Count} documents for filter {FilterName}", documents.Count, filterName);
@@ -631,14 +650,26 @@ public class LocationService : ILocationService
 
 public class DocumentItem
 {
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+    
     [JsonPropertyName("title")]
     public string Title { get; set; } = string.Empty;
     
     [JsonPropertyName("category")]
     public string Category { get; set; } = string.Empty;
     
+    [JsonPropertyName("siteType")]
+    public string SiteType { get; set; } = string.Empty;
+    
+    [JsonPropertyName("lmcsNames")]
+    public string LMCSNames { get; set; } = string.Empty;
+    
     [JsonPropertyName("state")]
     public string State { get; set; } = string.Empty;
+    
+    [JsonPropertyName("dateCreated")]
+    public string DateCreated { get; set; } = string.Empty;
     
     [JsonPropertyName("datePosted")]
     public string DatePosted { get; set; } = string.Empty;
