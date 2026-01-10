@@ -1,0 +1,173 @@
+html {
+  font-size: 16px;
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background-color: #f7f9fc;
+  color: #1f2933;
+}
+
+:root {
+  --lm-green: #67b430;
+  --lm-blue: #2f77c7;
+  --lm-blue-dark: #1f5a9c;
+  --lm-dark: #0f1115;
+}
+
+.lm-header .top-strip {
+  background: #f5f5f5;
+  border-bottom: 1px solid #e5e5e5;
+  font-size: 0.95rem;
+}
+
+.sign-in-link {
+  color: #2f77c7;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.sign-in-link:hover {
+  text-decoration: underline;
+}
+
+.lm-header .main-nav {
+  background: var(--lm-dark);
+}
+
+.energy-brand {
+  display: inline-block;
+  background: var(--lm-green);
+  color: #fff;
+  font-weight: 700;
+  padding: 0.45rem 0.9rem;
+  border-radius: 4px;
+  text-decoration: none;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.lm-brand {
+  font-size: 1.05rem;
+  letter-spacing: 0.2px;
+}
+
+.nav-link-header {
+  color: #e4e8ee;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.nav-link-header:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-link-header.active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.notice-bar {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  background: #f2f6fb;
+  border: 1px solid #dbe5f5;
+  color: #4d5766;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.page-shell {
+  padding-top: 1.5rem;
+}
+
+.lm-tabs .tab-btn {
+  border: none;
+  background: var(--lm-blue);
+  color: #fff;
+  padding: 0.7rem 1.2rem;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  box-shadow: 0 3px 8px rgba(17, 48, 86, 0.25);
+  transition: transform 0.1s ease, box-shadow 0.2s ease, background 0.15s ease;
+}
+
+.lm-tabs .tab-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(17, 48, 86, 0.28);
+}
+
+.lm-tabs .tab-btn.active {
+  background: var(--lm-blue-dark);
+}
+
+.lm-tabs .tab-secondary {
+  background: #3e8ed0;
+}
+
+.select-row label {
+  margin-bottom: 0;
+}
+
+.form-select {
+  min-width: 220px;
+  border-radius: 6px;
+}
+
+.site-select {
+  width: 200px;
+  max-width: 200px;
+  min-width: 160px;
+}
+
+.site-select option {
+  max-width: 200px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.lm-footer {
+  background: #fff;
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.15rem rgba(47, 119, 199, 0.35);
+}
+
+@media (max-width: 768px) {
+  .lm-header .container,
+  .lm-header .container-fluid {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .nav-links {
+    width: 100%;
+  }
+
+  .nav-link-header {
+    padding: 0.4rem 0.55rem;
+  }
+
+  .notice-bar {
+    margin: 0 1rem;
+    font-size: 0.92rem;
+  }
+
+  .lm-tabs {
+    justify-content: center;
+  }
+
+  .select-row {
+    margin-top: 1rem;
+  }
+}

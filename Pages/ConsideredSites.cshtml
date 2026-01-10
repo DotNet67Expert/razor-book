@@ -1,0 +1,234 @@
+@page
+@model PubSearchSite.Pages.ConsideredSitesModel
+@{
+    ViewData["Title"] = "Considered Sites";
+}
+
+<section class="page-shell">
+    <div class="notice-bar">
+        <p>The LM website includes both current and archived content, identified by publication date. Archived content is not actively updated or regularly reviewed. This may result in hyperlinks or other interactive elements no longer functioning as intended. Archived content may also contain references and/or text which no longer apply because of changes in law, regulation, or administration.</p>
+    </div>
+
+    <div class="container py-3">
+        <div class="lm-tabs d-flex flex-wrap gap-2">
+            <a asp-page="/Index" class="tab-btn @(Model.ActiveTab == "LM" ? "active" : "")">LM Sites</a>
+            <a asp-page="/ConsideredSites" class="tab-btn @(Model.ActiveTab == "Considered" ? "active" : "")">Considered Sites</a>
+            <a asp-page="/CerclaArPd" class="tab-btn @(Model.ActiveTab == "CERCLA" ? "active" : "")">CERCLA AR/PD</a>
+            <a href="#" class="tab-btn tab-secondary">Search</a>
+        </div>
+    </div>
+
+    <div class="container py-4">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-auto">
+                <label for="siteSelect" class="col-form-label fw-semibold">Select Site:</label>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <select id="siteSelect" class="form-select shadow-sm site-select">
+                    <option selected disabled>Select</option>
+                    @foreach (var site in Model.Locations)
+                    {
+                        <option value="@site">@site</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12 d-flex align-items-center gap-2">
+                <h3 id="siteTitle" class="mb-0 fw-semibold text-uppercase text-primary small"></h3>
+            </div>
+        </div>
+
+        <div class="row mt-4" id="siteDetailsSection" style="display: none;">
+            <div class="col-12">
+                <h5 class="fw-semibold">Site Details</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle mb-4" id="siteDetailsTable">
+                        <tbody id="siteDetailsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4" id="siteDocumentsSection" style="display: none;">
+            <div class="col-12">
+                <h5 class="fw-semibold">Site Documents</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle" id="siteDocumentsTable">
+                        <thead class="table-primary">
+                            <tr>
+                                <th style="width: 4rem;">File</th>
+                                <th>Document Title</th>
+                                <th style="width: 12rem;">Document Category</th>
+                                <th style="width: 8rem;">State</th>
+                                <th style="width: 10rem;">Date Posted</th>
+                            </tr>
+                        </thead>
+                        <tbody id="siteDocumentsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            const siteSelect = document.getElementById('siteSelect');
+            const siteTitle = document.getElementById('siteTitle');
+            const siteDetailsSection = document.getElementById('siteDetailsSection');
+            const siteDetailsBody = document.getElementById('siteDetailsBody');
+            const siteDocumentsSection = document.getElementById('siteDocumentsSection');
+            const siteDocumentsBody = document.getElementById('siteDocumentsBody');
+
+            const fieldLabels = {
+                designatedName: 'Designated Name',
+                alternateName: 'Alternate Name',
+                location: 'Location',
+                evaluationYear: 'Evaluation Year',
+                siteOperations: 'Site Operations',
+                siteDisposition: 'Site Disposition',
+                radioactiveMaterialsHandled: 'Radioactive Materials Handled',
+                primaryRadioactiveMaterialsHandled: 'Primary Radioactive Materials Handled',
+                radiologicalSurveys: 'Radiological Surveys',
+                siteStatus: 'Site Status',
+                siteSummary: 'Site Summary',
+                lmSite: 'LM Site'
+            };
+
+            const renderSiteDetails = (details) => {
+                siteDetailsBody.innerHTML = '';
+                if (!details) {
+                    siteDetailsSection.style.display = 'none';
+                    return;
+                }
+
+                const rows = [];
+                for (const [key, label] of Object.entries(fieldLabels)) {
+                    const value = details[key] || '';
+                    if (key === 'lmSite' && value && value.trim() !== '') {
+                        rows.push(`
+                            <tr>
+                                <td class="fw-semibold">${label}:</td>
+                                <td><a href="${value}" target="_blank" rel="noopener noreferrer">${value}</a></td>
+                            </tr>
+                        `);
+                    } else {
+                        // Always show the row, even if value is empty
+                        rows.push(`
+                            <tr>
+                                <td class="fw-semibold">${label}:</td>
+                                <td>${value && value.trim() !== '' ? escapeHtml(value) : ''}</td>
+                            </tr>
+                        `);
+                    }
+                }
+
+                if (rows.length > 0) {
+                    siteDetailsBody.innerHTML = rows.join('');
+                    siteDetailsSection.style.display = 'block';
+                } else {
+                    siteDetailsSection.style.display = 'none';
+                }
+            };
+
+            const renderDocuments = (docs) => {
+                siteDocumentsBody.innerHTML = '';
+                console.log('Rendering documents:', docs);
+                
+                // Always show the section
+                siteDocumentsSection.style.display = 'block';
+                
+                if (!docs || docs.length === 0) {
+                    console.log('No documents to render - showing empty message');
+                    // Show "There are no items to display here" message
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.colSpan = 5;
+                    cell.className = 'text-center text-muted py-4';
+                    cell.textContent = 'There are no items to display here.';
+                    row.appendChild(cell);
+                    siteDocumentsBody.appendChild(row);
+                    return;
+                }
+                
+                console.log('Rendering', docs.length, 'documents');
+
+                docs.forEach(doc => {
+                    const row = document.createElement('tr');
+
+                    const fileCell = document.createElement('td');
+                    fileCell.textContent = '📄';
+                    row.appendChild(fileCell);
+
+                    const titleCell = document.createElement('td');
+                    titleCell.textContent = doc.title || '';
+                    row.appendChild(titleCell);
+
+                    const catCell = document.createElement('td');
+                    catCell.textContent = doc.category || '';
+                    row.appendChild(catCell);
+
+                    const stateCell = document.createElement('td');
+                    stateCell.textContent = doc.state || '';
+                    row.appendChild(stateCell);
+
+                    const dateCell = document.createElement('td');
+                    dateCell.textContent = doc.datePosted || '';
+                    row.appendChild(dateCell);
+
+                    siteDocumentsBody.appendChild(row);
+                });
+            };
+
+            const escapeHtml = (text) => {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            };
+
+            const clearAll = () => {
+                siteTitle.textContent = '';
+                siteDetailsSection.style.display = 'none';
+                siteDocumentsSection.style.display = 'none';
+                siteDetailsBody.innerHTML = '';
+                siteDocumentsBody.innerHTML = '';
+            };
+
+            siteSelect?.addEventListener('change', async (e) => {
+                const value = e.target.value;
+                if (!value) {
+                    clearAll();
+                    return;
+                }
+                siteTitle.textContent = `${value} Site`;
+
+                try {
+                    // Fetch site details
+                    const detailsResp = await fetch(`?handler=SiteDetails&filterName=${encodeURIComponent(value)}`);
+                    if (detailsResp.ok) {
+                        const details = await detailsResp.json();
+                        renderSiteDetails(details);
+                    }
+
+                    // Fetch site documents
+                    const docsResp = await fetch(`?handler=SiteDocuments&filterName=${encodeURIComponent(value)}`);
+                    if (docsResp.ok) {
+                        const documents = await docsResp.json();
+                        console.log('Documents received:', documents);
+                        console.log('Documents count:', documents ? documents.length : 0);
+                        renderDocuments(documents);
+                    } else {
+                        console.error('Failed to fetch documents:', docsResp.status, docsResp.statusText);
+                    }
+                } catch (err) {
+                    console.error('Error loading site data:', err);
+                    clearAll();
+                }
+            });
+        })();
+    </script>
+}
+

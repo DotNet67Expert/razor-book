@@ -1,0 +1,52 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - PubSearchSite</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/PubSearchSite.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="lm-header">
+        <div class="top-strip">
+            <div class="container d-flex justify-content-between align-items-center py-1">
+                <a class="sign-in-link" href="#">Sign In</a>
+            </div>
+        </div>
+        <div class="main-nav">
+            <div class="container-fluid d-flex flex-wrap align-items-center justify-content-between gap-3 py-2">
+                <div class="brand-block d-flex align-items-center gap-3 flex-wrap">
+                    <a class="energy-brand" href="#">ENERGY.GOV</a>
+                    <span class="lm-brand text-white fw-semibold">Legacy Management</span>
+                </div>
+                <div class="nav-links d-flex flex-wrap align-items-center gap-3">
+                    <a class="nav-link-header active" href="#">Home</a>
+                    <a class="nav-link-header" href="#">Back to LM Sites</a>
+                    <a class="nav-link-header" href="#">Energy.gov Offices</a>
+                    <a class="nav-link-header" href="#">National Labs</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main role="main" class="pb-5">
+        @RenderBody()
+    </main>
+
+    <footer class="lm-footer border-top">
+        <div class="container py-3 d-flex justify-content-between flex-wrap gap-2">
+            <span class="text-muted small">&copy; 2025 - PubSearchSite</span>
+            <a class="text-muted small" asp-area="" asp-page="/Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,38 @@
+@page
+@model PubSearchSite.Pages.CerclaArPdModel
+@{
+    ViewData["Title"] = "CERCLA AR/PD";
+}
+
+<section class="page-shell">
+    <div class="notice-bar">
+        <p>The LM website includes both current and archived content, identified by publication date. Archived content is not actively updated or regularly reviewed. This may result in hyperlinks or other interactive elements no longer functioning as intended. Archived content may also contain references and/or text which no longer apply because of changes in law, regulation, or administration.</p>
+    </div>
+
+    <div class="container py-3">
+        <div class="lm-tabs d-flex flex-wrap gap-2">
+            <a asp-page="/Index" class="tab-btn @(Model.ActiveTab == "LM" ? "active" : "")">LM Sites</a>
+            <a asp-page="/ConsideredSites" class="tab-btn @(Model.ActiveTab == "Considered" ? "active" : "")">Considered Sites</a>
+            <a asp-page="/CerclaArPd" class="tab-btn @(Model.ActiveTab == "CERCLA" ? "active" : "")">CERCLA AR/PD</a>
+            <a href="#" class="tab-btn tab-secondary">Search</a>
+        </div>
+    </div>
+
+    <div class="container py-4">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-auto">
+                <label for="siteSelect" class="col-form-label fw-semibold">Select Site:</label>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <select id="siteSelect" class="form-select shadow-sm site-select">
+                    <option selected disabled>Select</option>
+                    @foreach (var site in Model.Locations)
+                    {
+                        <option value="@site">@site</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+</section>
+

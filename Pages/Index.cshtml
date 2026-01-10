@@ -1,0 +1,158 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<section class="page-shell">
+    <div class="notice-bar">
+        <p>The LM website includes both current and archived content, identified by publication date. Archived content is not actively updated or regularly reviewed. This may result in hyperlinks or other interactive elements no longer functioning as intended. Archived content may also contain references and/or text which no longer apply because of changes in law, regulation, or administration.</p>
+    </div>
+
+    <div class="container py-3">
+        <div class="lm-tabs d-flex flex-wrap gap-2">
+            <a asp-page="/Index" class="tab-btn @(Model.ActiveTab == "LM" ? "active" : "")">LM Sites</a>
+            <a asp-page="/ConsideredSites" class="tab-btn @(Model.ActiveTab == "Considered" ? "active" : "")">Considered Sites</a>
+            <a asp-page="/CerclaArPd" class="tab-btn @(Model.ActiveTab == "CERCLA" ? "active" : "")">CERCLA AR/PD</a>
+            <a href="#" class="tab-btn tab-secondary">Search</a>
+        </div>
+    </div>
+
+    <div class="container py-4">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-auto">
+                <label for="siteSelect" class="col-form-label fw-semibold">Select Site:</label>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <select id="siteSelect" class="form-select shadow-sm site-select">
+                    <option selected disabled>Select</option>
+                    @foreach (var site in Model.Locations)
+                    {
+                        <option value="@site">@site</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12 d-flex align-items-center gap-2">
+                <h3 id="siteTitle" class="mb-0 fw-semibold text-uppercase text-primary small"></h3>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <h5 class="fw-semibold">Key Documents</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle mb-4" id="keyDocsTable">
+                        <thead class="table-primary">
+                            <tr>
+                                <th style="width: 4rem;">File</th>
+                                <th>Document Title</th>
+                                <th style="width: 12rem;">Document Category</th>
+                                <th style="width: 8rem;">State</th>
+                                <th style="width: 10rem;">Date Posted</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-12">
+                <h5 class="fw-semibold">Site Documents</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle" id="siteDocsTable">
+                        <thead class="table-primary">
+                            <tr>
+                                <th style="width: 4rem;">File</th>
+                                <th>Document Title</th>
+                                <th style="width: 12rem;">Document Category</th>
+                                <th style="width: 8rem;">State</th>
+                                <th style="width: 10rem;">Date Posted</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            const siteSelect = document.getElementById('siteSelect');
+            const siteTitle = document.getElementById('siteTitle');
+            const keyDocsBody = document.querySelector('#keyDocsTable tbody');
+            const siteDocsBody = document.querySelector('#siteDocsTable tbody');
+
+            const renderDocs = (tbody, docs) => {
+                tbody.innerHTML = '';
+                if (!docs || docs.length === 0) {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.colSpan = 5;
+                    cell.textContent = 'No documents available.';
+                    row.appendChild(cell);
+                    tbody.appendChild(row);
+                    return;
+                }
+
+                docs.forEach(doc => {
+                    const row = document.createElement('tr');
+
+                    const fileCell = document.createElement('td');
+                    fileCell.textContent = '📄';
+                    row.appendChild(fileCell);
+
+                    const titleCell = document.createElement('td');
+                    titleCell.textContent = doc.title || '';
+                    row.appendChild(titleCell);
+
+                    const catCell = document.createElement('td');
+                    catCell.textContent = doc.category || '';
+                    row.appendChild(catCell);
+
+                    const stateCell = document.createElement('td');
+                    stateCell.textContent = doc.state || '';
+                    row.appendChild(stateCell);
+
+                    const dateCell = document.createElement('td');
+                    dateCell.textContent = doc.datePosted || '';
+                    row.appendChild(dateCell);
+
+                    tbody.appendChild(row);
+                });
+            };
+
+            const clearAll = () => {
+                siteTitle.textContent = '';
+                renderDocs(keyDocsBody, []);
+                renderDocs(siteDocsBody, []);
+            };
+
+            siteSelect?.addEventListener('change', async (e) => {
+                const value = e.target.value;
+                if (!value) {
+                    clearAll();
+                    return;
+                }
+                siteTitle.textContent = `${value} Site`;
+
+                try {
+                    const resp = await fetch(`?handler=Documents&site=${encodeURIComponent(value)}`);
+                    if (!resp.ok) throw new Error('Request failed');
+                    const data = await resp.json();
+                    renderDocs(keyDocsBody, data.keyDocuments);
+                    renderDocs(siteDocsBody, data.siteDocuments);
+                } catch (err) {
+                    clearAll();
+                }
+            });
+        })();
+    </script>
+}
