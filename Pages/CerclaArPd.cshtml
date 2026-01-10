@@ -33,6 +33,172 @@
                 </select>
             </div>
         </div>
+
+        <div class="row mt-4" id="arIndexSection" style="display: none;">
+            <div class="col-12">
+                <h5 class="fw-semibold">Administrative Record (AR) Index</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle mb-4" id="arIndexTable">
+                        <thead class="table-primary">
+                            <tr>
+                                <th style="width: 4rem;">File</th>
+                                <th>Document Title</th>
+                                <th style="width: 10rem;">Site</th>
+                                <th style="width: 10rem;">State</th>
+                            </tr>
+                        </thead>
+                        <tbody id="arIndexBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4" id="siteDocumentsSection" style="display: none;">
+            <div class="col-12">
+                <h5 class="fw-semibold">Site Documents</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle" id="siteDocumentsTable">
+                        <thead class="table-primary">
+                            <tr>
+                                <th style="width: 4rem;">File</th>
+                                <th style="width: 15rem;">AR/PD NUMBER</th>
+                                <th>Document Title</th>
+                                <th style="width: 10rem;">Document Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="siteDocumentsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
+
+@section Scripts {
+    <script>
+        (function () {
+            const siteSelect = document.getElementById('siteSelect');
+            const arIndexSection = document.getElementById('arIndexSection');
+            const arIndexBody = document.getElementById('arIndexBody');
+            const siteDocumentsSection = document.getElementById('siteDocumentsSection');
+            const siteDocumentsBody = document.getElementById('siteDocumentsBody');
+
+            const renderArIndex = (items) => {
+                arIndexBody.innerHTML = '';
+                if (!items || items.length === 0) {
+                    arIndexSection.style.display = 'none';
+                    return;
+                }
+
+                arIndexSection.style.display = 'block';
+
+                items.forEach(item => {
+                    const row = document.createElement('tr');
+
+                    // File column - show icon (always show icon, even if file path is empty)
+                    const fileCell = document.createElement('td');
+                    fileCell.textContent = '📄';
+                    if (item.file && item.file.trim() !== '') {
+                        // Optionally make it a link if needed in the future
+                        // For now, just show the icon
+                        fileCell.title = item.file; // Show file name on hover
+                    }
+                    row.appendChild(fileCell);
+
+                    // Document Title
+                    const titleCell = document.createElement('td');
+                    titleCell.textContent = item.title || '';
+                    row.appendChild(titleCell);
+
+                    // Site
+                    const siteCell = document.createElement('td');
+                    siteCell.textContent = item.site || '';
+                    row.appendChild(siteCell);
+
+                    // State
+                    const stateCell = document.createElement('td');
+                    stateCell.textContent = item.state || '';
+                    row.appendChild(stateCell);
+
+                    arIndexBody.appendChild(row);
+                });
+            };
+
+            const renderSiteDocuments = (items) => {
+                siteDocumentsBody.innerHTML = '';
+                if (!items || items.length === 0) {
+                    siteDocumentsSection.style.display = 'none';
+                    return;
+                }
+
+                siteDocumentsSection.style.display = 'block';
+
+                items.forEach(item => {
+                    const row = document.createElement('tr');
+
+                    // File column - show icon (always show icon, even if file path is empty)
+                    const fileCell = document.createElement('td');
+                    fileCell.textContent = '📄';
+                    if (item.file && item.file.trim() !== '') {
+                        // Optionally make it a link if needed in the future
+                        // For now, just show the icon
+                        fileCell.title = item.file; // Show file name on hover
+                    }
+                    row.appendChild(fileCell);
+
+                    // AR/PD NUMBER
+                    const arPdCell = document.createElement('td');
+                    arPdCell.textContent = item.arPdNumber || '';
+                    row.appendChild(arPdCell);
+
+                    // Document Title
+                    const titleCell = document.createElement('td');
+                    titleCell.textContent = item.title || '';
+                    row.appendChild(titleCell);
+
+                    // Document Date
+                    const dateCell = document.createElement('td');
+                    dateCell.textContent = item.documentDate || '';
+                    row.appendChild(dateCell);
+
+                    siteDocumentsBody.appendChild(row);
+                });
+            };
+
+            const clearAll = () => {
+                arIndexSection.style.display = 'none';
+                siteDocumentsSection.style.display = 'none';
+                arIndexBody.innerHTML = '';
+                siteDocumentsBody.innerHTML = '';
+            };
+
+            siteSelect?.addEventListener('change', async (e) => {
+                const value = e.target.value;
+                if (!value) {
+                    clearAll();
+                    return;
+                }
+
+                try {
+                    // Fetch AR Index
+                    const arIndexResp = await fetch(`?handler=ArIndex&site=${encodeURIComponent(value)}`);
+                    if (arIndexResp.ok) {
+                        const arIndexItems = await arIndexResp.json();
+                        renderArIndex(arIndexItems);
+                    }
+
+                    // Fetch Site Documents
+                    const siteDocsResp = await fetch(`?handler=SiteDocuments&site=${encodeURIComponent(value)}`);
+                    if (siteDocsResp.ok) {
+                        const siteDocsItems = await siteDocsResp.json();
+                        renderSiteDocuments(siteDocsItems);
+                    }
+                } catch (err) {
+                    console.error('Error loading CERCLA data:', err);
+                    clearAll();
+                }
+            });
+        })();
+    </script>
+}
 

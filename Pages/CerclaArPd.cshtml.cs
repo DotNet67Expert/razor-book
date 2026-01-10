@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using PubSearchSite.Services;
 
@@ -20,6 +21,26 @@ public class CerclaArPdModel : PageModel
     public async Task OnGetAsync()
     {
         Locations = await _locationService.GetCerclaSitesAsync(HttpContext.RequestAborted);
+    }
+
+    public async Task<IActionResult> OnGetArIndexAsync(string site)
+    {
+        if (string.IsNullOrWhiteSpace(site))
+        {
+            return new JsonResult(Array.Empty<CerclaArIndexItem>());
+        }
+        var items = await _locationService.GetCerclaArIndexAsync(site, HttpContext.RequestAborted);
+        return new JsonResult(items);
+    }
+
+    public async Task<IActionResult> OnGetSiteDocumentsAsync(string site)
+    {
+        if (string.IsNullOrWhiteSpace(site))
+        {
+            return new JsonResult(Array.Empty<CerclaSiteDocumentItem>());
+        }
+        var items = await _locationService.GetCerclaSiteDocumentsAsync(site, HttpContext.RequestAborted);
+        return new JsonResult(items);
     }
 }
 
