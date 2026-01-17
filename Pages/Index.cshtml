@@ -57,6 +57,7 @@
                         <tbody></tbody>
                     </table>
                 </div>
+                <div id="keyDocsPagination" class="d-flex align-items-center justify-content-center gap-2 py-2" style="display: none;"></div>
             </div>
         </div>
 
@@ -77,6 +78,7 @@
                         <tbody></tbody>
                     </table>
                 </div>
+                <div id="siteDocsPagination" class="d-flex align-items-center justify-content-center gap-2 py-2" style="display: none;"></div>
             </div>
         </div>
     </div>
@@ -85,54 +87,109 @@
 @section Scripts {
     <script>
         (function () {
+            const KEY_DOCS_PAGE_SIZE = 20;
+            const SITE_DOCS_PAGE_SIZE = 50;
+
             const siteSelect = document.getElementById('siteSelect');
             const siteTitle = document.getElementById('siteTitle');
             const keyDocsBody = document.querySelector('#keyDocsTable tbody');
             const siteDocsBody = document.querySelector('#siteDocsTable tbody');
+            const keyDocsPaginationDiv = document.getElementById('keyDocsPagination');
+            const siteDocsPaginationDiv = document.getElementById('siteDocsPagination');
 
-            const renderDocs = (tbody, docs) => {
+            let keyDocsData = [];
+            let siteDocsData = [];
+            let keyDocsCurrentPage = 1;
+            let siteDocsCurrentPage = 1;
+
+            const renderDocRows = (tbody, docs) => {
                 tbody.innerHTML = '';
-                if (!docs || docs.length === 0) {
-                    const row = document.createElement('tr');
-                    const cell = document.createElement('td');
-                    cell.colSpan = 5;
-                    cell.textContent = 'No documents available.';
-                    row.appendChild(cell);
-                    tbody.appendChild(row);
-                    return;
-                }
-
                 docs.forEach(doc => {
                     const row = document.createElement('tr');
-
                     const fileCell = document.createElement('td');
                     fileCell.textContent = '📄';
                     row.appendChild(fileCell);
-
                     const titleCell = document.createElement('td');
                     titleCell.textContent = doc.title || '';
                     row.appendChild(titleCell);
-
                     const catCell = document.createElement('td');
                     catCell.textContent = doc.category || '';
                     row.appendChild(catCell);
-
                     const stateCell = document.createElement('td');
                     stateCell.textContent = doc.state || '';
                     row.appendChild(stateCell);
-
                     const dateCell = document.createElement('td');
                     dateCell.textContent = doc.datePosted || '';
                     row.appendChild(dateCell);
-
                     tbody.appendChild(row);
                 });
             };
 
+            const renderKeyDocs = () => {
+                if (!keyDocsData || keyDocsData.length === 0) {
+                    keyDocsBody.innerHTML = '<tr><td colspan="5">No documents available.</td></tr>';
+                    keyDocsPaginationDiv.style.display = 'none';
+                    return;
+                }
+                const total = keyDocsData.length;
+                if (total <= KEY_DOCS_PAGE_SIZE) {
+                    renderDocRows(keyDocsBody, keyDocsData);
+                    keyDocsPaginationDiv.style.display = 'none';
+                    return;
+                }
+                const totalPages = Math.ceil(total / KEY_DOCS_PAGE_SIZE);
+                const start = (keyDocsCurrentPage - 1) * KEY_DOCS_PAGE_SIZE;
+                const end = Math.min(start + KEY_DOCS_PAGE_SIZE, total);
+                renderDocRows(keyDocsBody, keyDocsData.slice(start, end));
+                keyDocsPaginationDiv.style.display = 'flex';
+                keyDocsPaginationDiv.innerHTML = '<button type="button" class="btn btn-sm btn-outline-secondary" id="keyDocsPrev" aria-label="Previous">&#8592;</button><span class="pagination-info">' + (start + 1) + ' - ' + end + '</span><button type="button" class="btn btn-sm btn-outline-secondary" id="keyDocsNext" aria-label="Next">&#8594;</button>';
+                var prevBtn = keyDocsPaginationDiv.querySelector('#keyDocsPrev');
+                var nextBtn = keyDocsPaginationDiv.querySelector('#keyDocsNext');
+                if (prevBtn) prevBtn.disabled = keyDocsCurrentPage === 1;
+                if (nextBtn) nextBtn.disabled = keyDocsCurrentPage === totalPages;
+            };
+
+            const renderSiteDocs = () => {
+                if (!siteDocsData || siteDocsData.length === 0) {
+                    siteDocsBody.innerHTML = '<tr><td colspan="5">No documents available.</td></tr>';
+                    siteDocsPaginationDiv.style.display = 'none';
+                    return;
+                }
+                const total = siteDocsData.length;
+                if (total <= SITE_DOCS_PAGE_SIZE) {
+                    renderDocRows(siteDocsBody, siteDocsData);
+                    siteDocsPaginationDiv.style.display = 'none';
+                    return;
+                }
+                const totalPages = Math.ceil(total / SITE_DOCS_PAGE_SIZE);
+                const start = (siteDocsCurrentPage - 1) * SITE_DOCS_PAGE_SIZE;
+                const end = Math.min(start + SITE_DOCS_PAGE_SIZE, total);
+                renderDocRows(siteDocsBody, siteDocsData.slice(start, end));
+                siteDocsPaginationDiv.style.display = 'flex';
+                siteDocsPaginationDiv.innerHTML = '<button type="button" class="btn btn-sm btn-outline-secondary" id="siteDocsPrev" aria-label="Previous">&#8592;</button><span class="pagination-info">' + (start + 1) + ' - ' + end + '</span><button type="button" class="btn btn-sm btn-outline-secondary" id="siteDocsNext" aria-label="Next">&#8594;</button>';
+                var prevBtn = siteDocsPaginationDiv.querySelector('#siteDocsPrev');
+                var nextBtn = siteDocsPaginationDiv.querySelector('#siteDocsNext');
+                if (prevBtn) prevBtn.disabled = siteDocsCurrentPage === 1;
+                if (nextBtn) nextBtn.disabled = siteDocsCurrentPage === totalPages;
+            };
+
+            keyDocsPaginationDiv.addEventListener('click', function (e) {
+                if (e.target.id === 'keyDocsPrev' && !e.target.disabled) { keyDocsCurrentPage--; renderKeyDocs(); }
+                if (e.target.id === 'keyDocsNext' && !e.target.disabled) { keyDocsCurrentPage++; renderKeyDocs(); }
+            });
+            siteDocsPaginationDiv.addEventListener('click', function (e) {
+                if (e.target.id === 'siteDocsPrev' && !e.target.disabled) { siteDocsCurrentPage--; renderSiteDocs(); }
+                if (e.target.id === 'siteDocsNext' && !e.target.disabled) { siteDocsCurrentPage++; renderSiteDocs(); }
+            });
+
             const clearAll = () => {
                 siteTitle.textContent = '';
-                renderDocs(keyDocsBody, []);
-                renderDocs(siteDocsBody, []);
+                keyDocsData = [];
+                siteDocsData = [];
+                keyDocsCurrentPage = 1;
+                siteDocsCurrentPage = 1;
+                renderKeyDocs();
+                renderSiteDocs();
             };
 
             siteSelect?.addEventListener('change', async (e) => {
@@ -141,14 +198,18 @@
                     clearAll();
                     return;
                 }
-                siteTitle.textContent = `${value} Site`;
+                siteTitle.textContent = value + ' Site';
 
                 try {
-                    const resp = await fetch(`?handler=Documents&site=${encodeURIComponent(value)}`);
+                    const resp = await fetch('?handler=Documents&site=' + encodeURIComponent(value));
                     if (!resp.ok) throw new Error('Request failed');
                     const data = await resp.json();
-                    renderDocs(keyDocsBody, data.keyDocuments);
-                    renderDocs(siteDocsBody, data.siteDocuments);
+                    keyDocsData = data.keyDocuments || [];
+                    siteDocsData = data.siteDocuments || [];
+                    keyDocsCurrentPage = 1;
+                    siteDocsCurrentPage = 1;
+                    renderKeyDocs();
+                    renderSiteDocs();
                 } catch (err) {
                     clearAll();
                 }
