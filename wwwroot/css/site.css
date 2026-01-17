@@ -27,12 +27,13 @@ body {
 }
 
 .sign-in-link {
-  color: #2f77c7;
+  color: #666666 !important;
   text-decoration: none;
   font-weight: 600;
 }
 
 .sign-in-link:hover {
+  color: #666666 !important;
   text-decoration: underline;
 }
 
@@ -43,7 +44,7 @@ body {
 .energy-brand {
   display: inline-block;
   background: var(--lm-green);
-  color: #fff;
+  color: #fff !important;
   font-weight: 700;
   padding: 0.45rem 0.9rem;
   border-radius: 4px;
@@ -52,43 +53,84 @@ body {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
+.energy-brand:hover {
+  color: #fff !important;
+}
+
+.energy-brand:visited {
+  color: #fff !important;
+}
+
+.energy-brand:link {
+  color: #fff !important;
+}
+
 .lm-brand {
   font-size: 1.05rem;
   letter-spacing: 0.2px;
 }
 
 .nav-link-header {
-  color: #e4e8ee;
+  color: #fff !important;
   text-decoration: none;
   font-weight: 600;
   padding: 0.35rem 0.75rem;
   border-radius: 4px;
   transition: color 0.15s ease, background 0.15s ease;
+  cursor: pointer;
+  display: inline-block;
 }
 
 .nav-link-header:hover {
-  color: #fff;
+  color: #fff !important;
   background: rgba(255, 255, 255, 0.08);
 }
 
 .nav-link-header.active {
-  color: #fff;
+  color: #fff !important;
   background: rgba(255, 255, 255, 0.14);
+}
+
+.nav-link-header:visited {
+  color: #fff !important;
+}
+
+.nav-link-header:link {
+  color: #fff !important;
 }
 
 .notice-bar {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 1rem 1.5rem;
+  padding: 1.25rem 1.5rem;
   background: #f2f6fb;
   border: 1px solid #dbe5f5;
   color: #4d5766;
   font-size: 0.95rem;
   line-height: 1.5;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.notice-bar p {
+  margin: 0;
 }
 
 .page-shell {
-  padding-top: 1.5rem;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.page-shell .container {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 576px) {
+  .page-shell .container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
 }
 
 .lm-tabs .tab-btn {
@@ -137,10 +179,92 @@ body {
   word-break: break-word;
 }
 
+.foia-notice-box {
+  border: none;
+  border-radius: 4px;
+  padding: 1rem 1.25rem;
+  background-color: #fff;
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+.foia-notice-box p {
+  color: #1f2933;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.foia-link {
+  color: #2f77c7;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.foia-link:hover {
+  color: #1f5a9c;
+  text-decoration: underline;
+}
+
 .lm-footer {
   background: #fff;
   margin-top: auto;
   width: 100%;
+}
+
+.lm-footer-text {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #1f2933;
+  margin: 0;
+}
+
+.lm-footer-link {
+  color: #2f77c7;
+  text-decoration: underline;
+}
+
+.lm-footer-link:hover {
+  color: #1f5a9c;
+  text-decoration: underline;
+}
+
+/* Document Search Center (Search tab) */
+.search-page-title {
+  color: var(--lm-blue);
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.search-instruction {
+  color: #1f2933;
+}
+
+.search-tips-link {
+  color: var(--lm-blue);
+  text-decoration: underline;
+}
+
+.search-tips-link:hover {
+  color: var(--lm-blue-dark);
+}
+
+.search-sidebar-title {
+  color: #6f42c1;
+  font-weight: 600;
+}
+
+.search-sidebar-refiners {
+  margin-top: 0.5rem;
+}
+
+.search-suggestions {
+  margin-bottom: 0;
+  padding-left: 1.25rem;
+}
+
+.search-btn {
+  padding: 0.375rem 0.75rem;
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {

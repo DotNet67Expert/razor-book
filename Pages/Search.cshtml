@@ -1,0 +1,98 @@
+@page
+@model PubSearchSite.Pages.SearchModel
+@{
+    ViewData["Title"] = "Document Search Center";
+}
+
+<section class="page-shell">
+    <div class="notice-bar">
+        <p>The LM website includes both current and archived content, identified by publication date. Archived content is not actively updated or regularly reviewed. This may result in hyperlinks or other interactive elements no longer functioning as intended. Archived content may also contain references and/or text which no longer apply because of changes in law, regulation, or administration.</p>
+    </div>
+
+    <div class="container py-3">
+        <div class="lm-tabs d-flex flex-wrap gap-2">
+            <a asp-page="/Index" class="tab-btn">LM Sites</a>
+            <a asp-page="/ConsideredSites" class="tab-btn">Considered Sites</a>
+            <a asp-page="/CerclaArPd" class="tab-btn">CERCLA AR/PD</a>
+            <a asp-page="/Search" class="tab-btn @(Model.ActiveTab == "Search" ? "active" : "tab-secondary")">Search</a>
+        </div>
+    </div>
+
+    <div class="container py-4">
+        <h1 class="search-page-title text-center mb-3">Document Search Center</h1>
+        <p class="search-instruction text-center mb-4">
+            Enter the term (word) you want to search for in the search box below. Click <a href="https://lmpublicsearch.lm.doe.gov/esc/_layouts/15/help.aspx?Lcid=1033&Key=WSSEndUser_SearchTips&ShowNav=true" target="_blank" rel="noopener noreferrer" class="search-tips-link">here</a> for additional information and search tips.
+        </p>
+
+        <div class="row">
+            <aside class="col-12 col-md-3 mb-4 mb-md-0">
+                <div class="search-sidebar">
+                    <h6 class="search-sidebar-title">New Search</h6>
+                    <p class="search-sidebar-refiners text-muted small">We don't have any refiners to show you.</p>
+                </div>
+            </aside>
+            <div class="col-12 col-md-9">
+                <h5 class="fw-semibold mb-2">Search Box</h5>
+                <form class="search-form mb-4" id="searchForm">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search..." aria-label="Search" />
+                        <button type="submit" class="btn btn-primary search-btn" aria-label="Search">
+                            <span aria-hidden="true">&#128269;</span>
+                        </button>
+                    </div>
+                </form>
+                <div class="mb-2">
+                    <label for="sortSelect" class="form-label small mb-1">Sort by</label>
+                    <select class="form-select form-select-sm w-auto" id="sortSelect">
+                        <option value="relevance" selected>Relevance</option>
+                        <option value="date-newest">Date(Newest)</option>
+                        <option value="date-oldest">Date(Oldest)</option>
+                        <option value="lifetime-views">Lifetime Views</option>
+                        <option value="recent-views">Recent Views</option>
+                    </select>
+                </div>
+
+                <div id="noResultsSection" class="mt-4">
+                    <p class="mb-2">Nothing here matches your search.</p>
+                    <p class="fw-semibold mb-1">Suggestions:</p>
+                    <ul class="search-suggestions">
+                        <li>Make sure all words are spelled correctly</li>
+                        <li>Try different search terms</li>
+                        <li>Try more general search terms</li>
+                        <li>Try fewer search terms</li>
+                        <li>Try these <a href="#" class="search-tips-link">tips for searching</a></li>
+                    </ul>
+                </div>
+
+                <div id="searchResultsSection" class="mt-4" style="display: none;">
+                    <!-- Search results can be rendered here when backend is implemented -->
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+<script>
+(function() {
+    var form = document.getElementById('searchForm');
+    var input = document.getElementById('searchInput');
+    var noResults = document.getElementById('noResultsSection');
+    var resultsSection = document.getElementById('searchResultsSection');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var q = (input && input.value) ? input.value.trim() : '';
+            if (!q) {
+                noResults.style.display = 'block';
+                resultsSection.style.display = 'none';
+                return;
+            }
+            // Placeholder: when search backend exists, fetch and show results
+            noResults.style.display = 'block';
+            resultsSection.style.display = 'none';
+        });
+    }
+})();
+</script>
+}

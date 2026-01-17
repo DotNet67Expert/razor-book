@@ -14,7 +14,7 @@
             <a asp-page="/Index" class="tab-btn @(Model.ActiveTab == "LM" ? "active" : "")">LM Sites</a>
             <a asp-page="/ConsideredSites" class="tab-btn @(Model.ActiveTab == "Considered" ? "active" : "")">Considered Sites</a>
             <a asp-page="/CerclaArPd" class="tab-btn @(Model.ActiveTab == "CERCLA" ? "active" : "")">CERCLA AR/PD</a>
-            <a href="#" class="tab-btn tab-secondary">Search</a>
+            <a asp-page="/Search" class="tab-btn tab-secondary">Search</a>
         </div>
     </div>
 
@@ -35,8 +35,8 @@
         </div>
 
         <div class="row mt-4">
-            <div class="col-12 d-flex align-items-center gap-2">
-                <h3 id="siteTitle" class="mb-0 fw-semibold text-uppercase text-primary small"></h3>
+            <div class="col-12 text-center">
+                <h5 id="siteTitle" class="mb-0 fw-bold text-uppercase text-dark"></h5>
             </div>
         </div>
 

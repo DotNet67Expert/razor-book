@@ -14,7 +14,7 @@
             <a asp-page="/Index" class="tab-btn @(Model.ActiveTab == "LM" ? "active" : "")">LM Sites</a>
             <a asp-page="/ConsideredSites" class="tab-btn @(Model.ActiveTab == "Considered" ? "active" : "")">Considered Sites</a>
             <a asp-page="/CerclaArPd" class="tab-btn @(Model.ActiveTab == "CERCLA" ? "active" : "")">CERCLA AR/PD</a>
-            <a href="#" class="tab-btn tab-secondary">Search</a>
+            <a asp-page="/Search" class="tab-btn tab-secondary">Search</a>
         </div>
     </div>
 
@@ -36,7 +36,7 @@
 
         <div class="row mt-4">
             <div class="col-12 text-center">
-                <h3 id="siteTitle" class="mb-0 fw-semibold text-uppercase text-dark small"></h3>
+                <h5 id="siteTitle" class="mb-0 fw-semibold text-uppercase text-dark"></h5>
             </div>
         </div>
 
@@ -47,6 +47,14 @@
                     <table class="table table-sm table-striped align-middle mb-4" id="siteDetailsTable">
                         <tbody id="siteDetailsBody"></tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4" id="foiaNoticeSection" style="display: none;">
+            <div class="col-12">
+                <div class="foia-notice-box">
+                    <p class="mb-0">Please be green. Do not print these documents unless absolutely necessary. Submit a <a href="https://www.energy.gov/lm/freedom-information-act-foia-and-privacy-act-requests" target="_blank" rel="noopener noreferrer" class="foia-link">FOIA Request</a> for documents not available through this website.</p>
                 </div>
             </div>
         </div>
@@ -82,6 +90,7 @@
             const siteTitle = document.getElementById('siteTitle');
             const siteDetailsSection = document.getElementById('siteDetailsSection');
             const siteDetailsBody = document.getElementById('siteDetailsBody');
+            const foiaNoticeSection = document.getElementById('foiaNoticeSection');
             const siteDocumentsSection = document.getElementById('siteDocumentsSection');
             const siteDocumentsBody = document.getElementById('siteDocumentsBody');
 
@@ -131,8 +140,11 @@
                 if (rows.length > 0) {
                     siteDetailsBody.innerHTML = rows.join('');
                     siteDetailsSection.style.display = 'block';
+                    // Show FOIA notice when site details are displayed
+                    foiaNoticeSection.style.display = 'block';
                 } else {
                     siteDetailsSection.style.display = 'none';
+                    foiaNoticeSection.style.display = 'none';
                 }
             };
 
@@ -209,6 +221,7 @@
             const clearAll = () => {
                 siteTitle.textContent = '';
                 siteDetailsSection.style.display = 'none';
+                foiaNoticeSection.style.display = 'none';
                 siteDocumentsSection.style.display = 'none';
                 siteDetailsBody.innerHTML = '';
                 siteDocumentsBody.innerHTML = '';

@@ -14,7 +14,7 @@
             <a asp-page="/Index" class="tab-btn @(Model.ActiveTab == "LM" ? "active" : "")">LM Sites</a>
             <a asp-page="/ConsideredSites" class="tab-btn @(Model.ActiveTab == "Considered" ? "active" : "")">Considered Sites</a>
             <a asp-page="/CerclaArPd" class="tab-btn @(Model.ActiveTab == "CERCLA" ? "active" : "")">CERCLA AR/PD</a>
-            <a href="#" class="tab-btn tab-secondary">Search</a>
+            <a asp-page="/Search" class="tab-btn tab-secondary">Search</a>
         </div>
     </div>
 
