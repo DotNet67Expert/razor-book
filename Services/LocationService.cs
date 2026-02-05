@@ -97,18 +97,17 @@ public class LocationService : ILocationService
             await connection.OpenAsync(cancellationToken);
 
             await using var command = connection.CreateCommand();
-            command.CommandText = "SELECT Site FROM LMandConsideredSites";
+            command.CommandText = "SELECT [Site] FROM [PubSearch].[dbo].[LMandConsideredSites] GROUP BY [PubSearch].[dbo].[LMandConsideredSites].[Site]";
             command.CommandType = CommandType.Text;
 
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
-                var siteValue = SafeGetString(reader, "Site");
-                var value = NormalizeDisplayName(siteValue);
-                if (!string.IsNullOrWhiteSpace(value))
-                {
-                    allSites.Add(value);
-                }
+                var siteValue = SafeGetString(reader, "Site").Trim();
+                if (string.IsNullOrWhiteSpace(siteValue)) continue;
+                // Exclude values that include space or hyphen
+                if (siteValue.Contains(' ') || siteValue.Contains('-')) continue;
+                allSites.Add(siteValue);
             }
         }
         catch (SqlException ex)
