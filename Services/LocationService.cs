@@ -135,17 +135,16 @@ public class LocationService : ILocationService
             await connection.OpenAsync(cancellationToken);
 
             await using var command = connection.CreateCommand();
-            command.CommandText = "SELECT [Filter_x0020_Name] FROM ConsideredSiteDetails";
+            command.CommandText = "SELECT [Filter_x0020_Name] FROM [PubSearch].[dbo].[ConsideredSiteDetails] ORDER BY [PubSearch].[dbo].[ConsideredSiteDetails].[Filter_x0020_Name]";
             command.CommandType = CommandType.Text;
 
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
-                var filterValue = SafeGetString(reader, "Filter_x0020_Name");
-                var value = NormalizeDisplayName(filterValue);
-                if (!string.IsNullOrWhiteSpace(value))
+                var filterValue = SafeGetString(reader, "Filter_x0020_Name").Trim();
+                if (!string.IsNullOrWhiteSpace(filterValue))
                 {
-                    sites.Add(value);
+                    sites.Add(filterValue);
                 }
             }
         }
@@ -421,6 +420,12 @@ public class LocationService : ILocationService
                     // If column doesn't exist or error reading, skip adding to key docs
                 }
             }
+            // Site Documents keep query order (DESC = newest first). Key Documents sort by Date Posted ascending (oldest first).
+            keyDocs = keyDocs.OrderBy(d =>
+            {
+                if (string.IsNullOrWhiteSpace(d.DatePosted)) return DateTime.MinValue;
+                return DateTime.TryParse(d.DatePosted, out var dt) ? dt : DateTime.MinValue;
+            }).ToList();
             _logger.LogInformation("Loaded {KeyCount} key documents and {TotalCount} total documents for site {Site}", keyDocs.Count, allDocs.Count, site);
         }
         catch (SqlException ex)
@@ -479,7 +484,8 @@ public class LocationService : ILocationService
                 { "Radiological_x0020_Surveys", "Radiological_x0020_Surveys" },
                 { "Site_x0020_Status", "Site_x0020_Status" },
                 { "Site_x0020_Summary", "Site_x0020_Summary" },
-                { "LM_x0020_Site", "LM_x0020_Site" }
+                { "LM_x0020_Site", "LM_x0020_Site" },
+                { "SiteLink1", "SiteLink1" }
             };
 
             foreach (var column in allColumns)
@@ -583,7 +589,7 @@ public class LocationService : ILocationService
                     RadiologicalSurveys = SafeGetString(reader, "Radiological_x0020_Surveys"),
                     SiteStatus = SafeGetString(reader, "Site_x0020_Status"),
                     SiteSummary = SafeGetString(reader, "Site_x0020_Summary"),
-                    LmSite = SafeGetString(reader, "LM_x0020_Site")
+                    LmSite = SafeGetString(reader, "SiteLink1")
                 };
             }
         }

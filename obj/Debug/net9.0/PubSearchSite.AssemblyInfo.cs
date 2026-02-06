@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PubSearchSite")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3bd20e36d3f4c3af83fddedfd188c522bb8193f1")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+60e1867a075db4cd05595e70e9c8f99750e15981")]
 [assembly: System.Reflection.AssemblyProductAttribute("PubSearchSite")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PubSearchSite")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
