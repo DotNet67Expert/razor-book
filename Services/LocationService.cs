@@ -615,12 +615,12 @@ public class LocationService : ILocationService
             await using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync(cancellationToken);
 
-            // Get all available columns first
+            // Get LMandConsideredSites columns (Considered Sites Site Documents use LMandConsideredSites)
             await using var getAllColumnsCommand = connection.CreateCommand();
             getAllColumnsCommand.CommandText = @"
                 SELECT COLUMN_NAME 
                 FROM INFORMATION_SCHEMA.COLUMNS 
-                WHERE TABLE_NAME = 'ConsideredSiteDetails'
+                WHERE TABLE_NAME = 'LMandConsideredSites'
                 ORDER BY ORDINAL_POSITION";
             
             var availableColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -630,139 +630,107 @@ public class LocationService : ILocationService
                 {
                     var colName = columnReader.GetString(0);
                     availableColumns.Add(colName);
-                    _logger.LogInformation("ConsideredSiteDetails column found: {ColumnName}", colName);
+                    _logger.LogInformation("LMandConsideredSites column found: {ColumnName}", colName);
                 }
             }
 
-            // Check which columns exist - also check alternative column names
-            bool hasTitle = availableColumns.Contains("Title");
             bool hasDocDesc = availableColumns.Contains("DocDesc");
+            bool hasTitle = availableColumns.Contains("Title");
             bool hasFileLeafRef = availableColumns.Contains("FileLeafRef");
             bool hasDocumentCategory = availableColumns.Contains("Document_x0020_Category");
             bool hasState = availableColumns.Contains("State");
-            bool hasSiteType = availableColumns.Contains("Site_x0020_Type");
-            bool hasLMCSNames = availableColumns.Contains("LMCS_x0020_Names");
+            bool hasSiteType = availableColumns.Contains("SiteType") || availableColumns.Contains("Site_x0020_Type");
+            bool hasLMCSNames = availableColumns.Contains("LMCSNames") || availableColumns.Contains("LMCS_x0020_Names");
+            bool hasFilterName = availableColumns.Contains("Filter_x0020_Name");
             bool hasLegacyDateCreated = availableColumns.Contains("LegacyDateCreated");
             bool hasDateCreated = availableColumns.Contains("Date_x0020_Created");
             bool hasDatePosted = availableColumns.Contains("Date_x0020_Posted");
             
-            _logger.LogInformation("Columns check for documents - Title:{T} DocDesc:{D} FileLeafRef:{F} Category:{C} State:{S} SiteType:{ST} LMCSNames:{LMCS} LegacyDate:{LDate} DateCreated:{DC} DatePosted:{DP}", 
-                hasTitle, hasDocDesc, hasFileLeafRef, hasDocumentCategory, hasState, hasSiteType, hasLMCSNames, hasLegacyDateCreated, hasDateCreated, hasDatePosted);
+            _logger.LogInformation("LMandConsideredSites columns - DocDesc:{D} Title:{T} FileLeafRef:{F} Category:{C} State:{S} LMCSNames:{LMCS} LegacyDate:{LDate}", 
+                hasDocDesc, hasTitle, hasFileLeafRef, hasDocumentCategory, hasState, hasLMCSNames, hasLegacyDateCreated);
 
-            // Build title column
+            // Document Title: DocDesc from LMandConsideredSites (with fallback to Title, FileLeafRef)
             var titleParts = new List<string>();
             if (hasDocDesc) titleParts.Add("[DocDesc]");
             if (hasTitle) titleParts.Add("[Title]");
             if (hasFileLeafRef) titleParts.Add("[FileLeafRef]");
             
-            // If no title columns exist, return empty list (no documents table structure)
             if (titleParts.Count == 0)
             {
                 return documents;
             }
             
-            // Build titleColumn: if only 1 column, don't use COALESCE
-            string titleColumn;
-            if (titleParts.Count == 1)
-            {
-                titleColumn = $"{titleParts[0]} AS Title";
-            }
-            else
-            {
-                titleColumn = $"COALESCE({string.Join(", ", titleParts)}) AS Title";
-            }
+            string titleColumn = titleParts.Count == 1
+                ? $"{titleParts[0]} AS Title"
+                : $"COALESCE({string.Join(", ", titleParts)}) AS Title";
 
-            // Build other columns - use NULL for missing columns
+            // Document Category: Document_x0020_Category from LMandConsideredSites
             string categoryColumn = hasDocumentCategory 
                 ? "COALESCE([Document_x0020_Category], '') AS DocumentCategory" 
                 : "CAST(NULL AS NVARCHAR(MAX)) AS DocumentCategory";
-            string siteTypeColumn = hasSiteType
-                ? "COALESCE([Site_x0020_Type], '') AS SiteType"
-                : "CAST(NULL AS NVARCHAR(MAX)) AS SiteType";
-            string lmcsNamesColumn = hasLMCSNames
-                ? "COALESCE([LMCS_x0020_Names], '') AS LMCSNames"
-                : "CAST(NULL AS NVARCHAR(MAX)) AS LMCSNames";
+            string siteTypeColumn = availableColumns.Contains("SiteType")
+                ? "COALESCE([SiteType], '') AS SiteType"
+                : availableColumns.Contains("Site_x0020_Type")
+                    ? "COALESCE([Site_x0020_Type], '') AS SiteType"
+                    : "CAST(NULL AS NVARCHAR(MAX)) AS SiteType";
+            string lmcsNamesColumn = availableColumns.Contains("LMCSNames")
+                ? "COALESCE([LMCSNames], '') AS LMCSNames"
+                : availableColumns.Contains("LMCS_x0020_Names")
+                    ? "COALESCE([LMCS_x0020_Names], '') AS LMCSNames"
+                    : "CAST(NULL AS NVARCHAR(MAX)) AS LMCSNames";
             string stateColumn = hasState 
                 ? "COALESCE([State], '') AS State" 
                 : "CAST(NULL AS NVARCHAR(MAX)) AS State";
             
-            // Use the first available date column
             string dateColumn;
             if (hasDateCreated)
-            {
                 dateColumn = "CASE WHEN [Date_x0020_Created] IS NOT NULL THEN CONVERT(VARCHAR(50), [Date_x0020_Created], 101) ELSE '' END AS DateCreated";
-            }
             else if (hasLegacyDateCreated)
-            {
                 dateColumn = "CASE WHEN [LegacyDateCreated] IS NOT NULL THEN CONVERT(VARCHAR(50), [LegacyDateCreated], 101) ELSE '' END AS DateCreated";
-            }
             else if (hasDatePosted)
-            {
                 dateColumn = "CASE WHEN [Date_x0020_Posted] IS NOT NULL THEN CONVERT(VARCHAR(50), [Date_x0020_Posted], 101) ELSE '' END AS DateCreated";
-            }
             else
-            {
                 dateColumn = "CAST(NULL AS NVARCHAR(MAX)) AS DateCreated";
-            }
             string fileRefColumn = hasFileLeafRef 
                 ? "[FileLeafRef] AS FileLeafRef" 
                 : "CAST(NULL AS NVARCHAR(MAX)) AS FileLeafRef";
 
-            // Build WHERE clause - prioritize LMCS_x0020_Names as primary filter
-            // The filterName comes normalized (spaces), but the database may have underscores
-            // Try to match both: exact match and with spaces converted to underscores
             string normalizedForDb = filterName.Replace(" ", "_");
             
-            // Build WHERE clause - prioritize LMCS_x0020_Names if available, otherwise use Filter_x0020_Name
+            // WHERE: filter by LMCSNames/LMCS_x0020_Names, Filter_x0020_Name, or Site to match Considered Site
+            string lmcsColumn = availableColumns.Contains("LMCSNames") ? "[LMCSNames]" : "[LMCS_x0020_Names]";
             string whereClause;
             if (hasLMCSNames)
             {
-                // Primary: search by LMCS_x0020_Names, fallback to Filter_x0020_Name
-                whereClause = @"(
-                    [LMCS_x0020_Names] = @filterName OR 
-                    [LMCS_x0020_Names] = @normalizedFilter OR 
-                    REPLACE([LMCS_x0020_Names], '_', ' ') = @filterName OR
-                    [Filter_x0020_Name] = @filterName OR 
-                    [Filter_x0020_Name] = @normalizedFilter OR 
-                    REPLACE([Filter_x0020_Name], '_', ' ') = @filterName
-                )";
+                whereClause = $@"(
+                    {lmcsColumn} = @filterName OR 
+                    {lmcsColumn} = @normalizedFilter OR 
+                    REPLACE({lmcsColumn}, '_', ' ') = @filterName" +
+                    (hasFilterName ? @" OR [Filter_x0020_Name] = @filterName OR [Filter_x0020_Name] = @normalizedFilter OR REPLACE([Filter_x0020_Name], '_', ' ') = @filterName" : "") +
+                    ")";
+            }
+            else if (hasFilterName)
+            {
+                whereClause = "([Filter_x0020_Name] = @filterName OR [Filter_x0020_Name] = @normalizedFilter OR REPLACE([Filter_x0020_Name], '_', ' ') = @filterName)";
             }
             else
             {
-                // Fallback to Filter_x0020_Name if LMCS_x0020_Names doesn't exist
-                whereClause = "([Filter_x0020_Name] = @filterName OR [Filter_x0020_Name] = @normalizedFilter OR REPLACE([Filter_x0020_Name], '_', ' ') = @filterName)";
+                // Fallback: use [Site] column (same identifier may be used for both LM and Considered sites)
+                whereClause = "([Site] = @filterName OR [Site] = @normalizedFilter OR REPLACE([Site], '_', ' ') = @filterName)";
             }
             
-            // Optionally add a check that at least one title field exists, but make it less restrictive
-            if (titleParts.Count > 0)
-            {
-                // Only filter out completely NULL rows, but allow empty strings
-                var nullChecks = titleParts.Select(tp => $"{tp} IS NOT NULL");
-                whereClause += $" AND ({string.Join(" OR ", nullChecks)})";
-            }
+            var nullChecks = titleParts.Select(tp => $"{tp} IS NOT NULL");
+            whereClause += $" AND ({string.Join(" OR ", nullChecks)})";
 
-            // Build ORDER BY - use first available date column
-            string orderByClause = "";
-            if (hasDateCreated)
-            {
-                orderByClause = " ORDER BY [Date_x0020_Created] DESC";
-            }
-            else if (hasLegacyDateCreated)
-            {
-                orderByClause = " ORDER BY [LegacyDateCreated] DESC";
-            }
-            else if (hasDatePosted)
-            {
-                orderByClause = " ORDER BY [Date_x0020_Posted] DESC";
-            }
-            else if (hasTitle)
-            {
-                orderByClause = " ORDER BY [Title]";
-            }
+            string orderByClause = hasDateCreated ? " ORDER BY [Date_x0020_Created] DESC"
+                : hasLegacyDateCreated ? " ORDER BY [LegacyDateCreated] DESC"
+                : hasDatePosted ? " ORDER BY [Date_x0020_Posted] DESC"
+                : hasDocDesc ? " ORDER BY [DocDesc]"
+                : hasTitle ? " ORDER BY [Title]"
+                : " ORDER BY [FileLeafRef]";
 
             await using var command = connection.CreateCommand();
             
-            // Build the complete query - construct it step by step to avoid syntax errors
             var queryBuilder = new System.Text.StringBuilder();
             queryBuilder.AppendLine("SELECT");
             queryBuilder.AppendLine($"  {titleColumn},");
@@ -772,7 +740,7 @@ public class LocationService : ILocationService
             queryBuilder.AppendLine($"  {stateColumn},");
             queryBuilder.AppendLine($"  {dateColumn},");
             queryBuilder.AppendLine($"  {fileRefColumn}");
-            queryBuilder.AppendLine("FROM ConsideredSiteDetails");
+            queryBuilder.AppendLine("FROM [PubSearch].[dbo].[LMandConsideredSites]");
             queryBuilder.AppendLine($"WHERE {whereClause}");
             
             if (!string.IsNullOrWhiteSpace(orderByClause))
@@ -832,13 +800,13 @@ public class LocationService : ILocationService
             
             if (documents.Count == 0 && rowCount == 0)
             {
-                _logger.LogWarning("No rows returned for filter '{FilterName}'. Check if LMCS_x0020_Names or Filter_x0020_Name matches: '{FilterName}' or '{Normalized}'", 
+                _logger.LogWarning("No rows returned from LMandConsideredSites for filter '{FilterName}'. Check if LMCS_x0020_Names or Filter_x0020_Name matches: '{FilterName}' or '{Normalized}'", 
                     filterName, filterName, normalizedForDb);
             }
         }
         catch (SqlException ex)
         {
-            _logger.LogError(ex, "Failed to load documents from dbo.ConsideredSiteDetails for filter {FilterName}. Error: {Error}", 
+            _logger.LogError(ex, "Failed to load documents from dbo.LMandConsideredSites for filter {FilterName}. Error: {Error}", 
                 filterName, ex.Message);
         }
         catch (Exception ex)
