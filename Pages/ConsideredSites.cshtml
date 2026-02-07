@@ -173,12 +173,9 @@
                 docs.forEach(doc => {
                     const row = document.createElement('tr');
 
-                    // Name column - use icon (show filename on hover if available)
+                    // Name column
                     const nameCell = document.createElement('td');
-                    nameCell.textContent = '📄';
-                    if (doc.filePath || doc.name) {
-                        nameCell.title = doc.filePath || doc.name;
-                    }
+                    nameCell.textContent = doc.name || '📄';
                     row.appendChild(nameCell);
 
                     // Document Title

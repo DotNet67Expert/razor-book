@@ -170,160 +170,29 @@ public class LocationService : ILocationService
             await using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync(cancellationToken);
 
-            // Check which table and field to use
-            // Priority: 1. CERCLAARIndexes table, 2. CERCLA table
-            string tableName = null;
-            string fieldName = null;
-
-            // Check if CERCLAARIndexes table exists
-            await using var checkTable1 = connection.CreateCommand();
-            checkTable1.CommandText = @"
-                SELECT COUNT(*) 
-                FROM INFORMATION_SCHEMA.TABLES 
-                WHERE TABLE_NAME = 'CERCLAARIndexes'";
-            var table1Exists = Convert.ToInt32(await checkTable1.ExecuteScalarAsync(cancellationToken)) > 0;
-
-            if (table1Exists)
-            {
-                // Check for Site field in CERCLAARIndexes - check all possible field names
-                await using var checkField1 = connection.CreateCommand();
-                checkField1.CommandText = @"
-                    SELECT COLUMN_NAME 
-                    FROM INFORMATION_SCHEMA.COLUMNS 
-                    WHERE TABLE_NAME = 'CERCLAARIndexes' 
-                      AND (
-                          COLUMN_NAME IN ('Site', 'SiteName', 'Site_x0020_Name') 
-                          OR COLUMN_NAME LIKE '%Site%'
-                      )
-                    ORDER BY 
-                      CASE 
-                        WHEN COLUMN_NAME = 'Site' THEN 1
-                        WHEN COLUMN_NAME = 'SiteName' THEN 2
-                        WHEN COLUMN_NAME = 'Site_x0020_Name' THEN 3
-                        ELSE 4
-                      END";
-                await using var fieldReader1 = await checkField1.ExecuteReaderAsync(cancellationToken);
-                if (await fieldReader1.ReadAsync(cancellationToken))
-                {
-                    tableName = "CERCLAARIndexes";
-                    fieldName = fieldReader1.GetString(0);
-                    _logger.LogInformation("Found field '{FieldName}' in CERCLAARIndexes table", fieldName);
-                }
-            }
-
-            // If not found, check CERCLA table
-            if (string.IsNullOrEmpty(tableName))
-            {
-                await using var checkTable2 = connection.CreateCommand();
-                checkTable2.CommandText = @"
-                    SELECT COUNT(*) 
-                    FROM INFORMATION_SCHEMA.TABLES 
-                    WHERE TABLE_NAME = 'CERCLA'";
-                var table2Exists = Convert.ToInt32(await checkTable2.ExecuteScalarAsync(cancellationToken)) > 0;
-
-                if (table2Exists)
-                {
-                    // Check for Site field in CERCLA - check all possible field names
-                    await using var checkField2 = connection.CreateCommand();
-                    checkField2.CommandText = @"
-                        SELECT COLUMN_NAME 
-                        FROM INFORMATION_SCHEMA.COLUMNS 
-                        WHERE TABLE_NAME = 'CERCLA' 
-                          AND (
-                              COLUMN_NAME IN ('Site', 'SiteName', 'Site_x0020_Name') 
-                              OR COLUMN_NAME LIKE '%Site%'
-                          )
-                        ORDER BY 
-                          CASE 
-                            WHEN COLUMN_NAME = 'Site' THEN 1
-                            WHEN COLUMN_NAME = 'SiteName' THEN 2
-                            WHEN COLUMN_NAME = 'Site_x0020_Name' THEN 3
-                            ELSE 4
-                          END";
-                    await using var fieldReader2 = await checkField2.ExecuteReaderAsync(cancellationToken);
-                    if (await fieldReader2.ReadAsync(cancellationToken))
-                    {
-                        tableName = "CERCLA";
-                        fieldName = fieldReader2.GetString(0);
-                        _logger.LogInformation("Found field '{FieldName}' in CERCLA table", fieldName);
-                    }
-                }
-            }
-
-            if (string.IsNullOrEmpty(tableName) || string.IsNullOrEmpty(fieldName))
-            {
-                _logger.LogWarning("Could not find CERCLAARIndexes or CERCLA table with Site field.");
-                // Try to list available columns for debugging
-                try
-                {
-                    var tablesToCheck = new[] { "CERCLAARIndexes", "CERCLA" };
-                    foreach (var table in tablesToCheck)
-                    {
-                        await using var listColumns = connection.CreateCommand();
-                        listColumns.CommandText = $@"
-                            SELECT COLUMN_NAME 
-                            FROM INFORMATION_SCHEMA.COLUMNS 
-                            WHERE TABLE_NAME = '{table}'
-                            ORDER BY ORDINAL_POSITION";
-                        await using var colReader = await listColumns.ExecuteReaderAsync(cancellationToken);
-                        var columns = new List<string>();
-                        while (await colReader.ReadAsync(cancellationToken))
-                        {
-                            columns.Add(colReader.GetString(0));
-                        }
-                        if (columns.Count > 0)
-                        {
-                            _logger.LogWarning("Available columns in {Table}: {Columns}", table, string.Join(", ", columns));
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error listing available columns");
-                }
-                return sites;
-            }
-
-            _logger.LogInformation("Using table '{TableName}' with field '{FieldName}' for CERCLA sites", tableName, fieldName);
-
-            // Query the appropriate table
             await using var command = connection.CreateCommand();
-            command.CommandText = $@"
-                SELECT DISTINCT [{fieldName}]
-                FROM [{tableName}]
-                WHERE [{fieldName}] IS NOT NULL AND LTRIM(RTRIM([{fieldName}])) <> ''
-                ORDER BY [{fieldName}]";
+            command.CommandText = "SELECT [Sites] FROM [PubSearch].[dbo].[CERCLA] GROUP BY [PubSearch].[dbo].[CERCLA].[Sites]";
             command.CommandType = CommandType.Text;
 
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
-                var rawValue = SafeGetString(reader, fieldName);
-                // For CERCLA sites, preserve underscores - don't normalize them away
-                // But still clean up other issues
-                var value = rawValue;
+                var value = SafeGetString(reader, "Sites").Trim();
                 if (!string.IsNullOrWhiteSpace(value))
                 {
-                    // Only normalize spaces and commas, but keep underscores
-                    value = value.Replace(",", "").Trim();
-                    value = Regex.Replace(value, @"\s+", " ").Trim();
-                    
-                    // Don't apply full NormalizeDisplayName as it converts underscores to spaces
-                    // For CERCLA, underscores are part of the site names (e.g., Rocky_Flats, Weldon_Spring)
                     sites.Add(value);
                 }
             }
         }
         catch (SqlException ex)
         {
-            _logger.LogError(ex, "Failed to load Site from CERCLAARIndexes or CERCLA table. Check connection string and permissions. Error: {Error}", ex.Message);
+            _logger.LogError(ex, "Failed to load Sites from dbo.CERCLA. Check connection string and permissions. Error: {Error}", ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error loading CERCLA sites. Error: {Error}", ex.Message);
         }
 
-        // Remove duplicates (case-insensitive) and sort
         var finalSites = sites
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(s => s)
@@ -668,16 +537,13 @@ public class LocationService : ILocationService
             string categoryColumn = hasDocumentCategory 
                 ? "COALESCE([Document_x0020_Category], '') AS DocumentCategory" 
                 : "CAST(NULL AS NVARCHAR(MAX)) AS DocumentCategory";
+            // Site Type: [SiteType], LMCS Names: [LMCSNames] from database
             string siteTypeColumn = availableColumns.Contains("SiteType")
                 ? "COALESCE([SiteType], '') AS SiteType"
-                : availableColumns.Contains("Site_x0020_Type")
-                    ? "COALESCE([Site_x0020_Type], '') AS SiteType"
-                    : "CAST(NULL AS NVARCHAR(MAX)) AS SiteType";
+                : "CAST(NULL AS NVARCHAR(MAX)) AS SiteType";
             string lmcsNamesColumn = availableColumns.Contains("LMCSNames")
                 ? "COALESCE([LMCSNames], '') AS LMCSNames"
-                : availableColumns.Contains("LMCS_x0020_Names")
-                    ? "COALESCE([LMCS_x0020_Names], '') AS LMCSNames"
-                    : "CAST(NULL AS NVARCHAR(MAX)) AS LMCSNames";
+                : "CAST(NULL AS NVARCHAR(MAX)) AS LMCSNames";
             string stateColumn = hasState 
                 ? "COALESCE([State], '') AS State" 
                 : "CAST(NULL AS NVARCHAR(MAX)) AS State";
@@ -776,8 +642,8 @@ public class LocationService : ILocationService
                 var lmcsNames = SafeGetString(reader, "LMCSNames").Trim();
                 var dateCreated = SafeGetString(reader, "DateCreated").Trim();
 
-                // Use FileLeafRef as Name if available, otherwise use file icon
-                var name = hasFileLeafRef && !string.IsNullOrWhiteSpace(filePath) ? filePath : "📄";
+                // Name column: always use icon for Considered Sites Site Documents
+                var name = "📄";
 
                 documents.Add(new DocumentItem
                 {
